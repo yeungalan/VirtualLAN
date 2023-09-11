@@ -10,37 +10,28 @@ import (
 )
 
 func main() {
+	log.Println("Starting wireguard client...")
 	var url, destFileName string
 
-	// Ask the user whether they want the client or server configuration
-	fmt.Print("Enter 'client' for client configuration or 'server' for server configuration: ")
-	var choice string
-	fmt.Scanln(&choice)
-
-	switch choice {
-	case "client":
-		url = "http://10.0.0.29:8080/getClient"
-		destFileName = "wg2.conf"
-	case "server":
-		url = "http://10.0.0.29:8080/getServer"
-		destFileName = "wg2.conf"
-	default:
-		fmt.Println("Invalid choice. Please enter 'client' or 'server'.")
-		return
-	}
+	url = "http://10.0.0.29:8080/getClient"
+	destFileName = "wg2.conf"
 
 	// Fetch the INI file from the chosen URL
+	log.Println("Obtaining config...")
+
 	err := downloadINIFile(url, destFileName)
 	if err != nil {
 		fmt.Printf("Failed to fetch INI file: %v\n", err)
 		return
 	}
-	fmt.Printf("INI file downloaded as %s\n", destFileName)
+	log.Println("Obtained...")
 
 	path, err := os.Getwd()
 	if err != nil {
 		log.Println(err)
 	}
+
+	log.Println("Starting wireguard...")
 
 	// Run the first WireGuard command
 	cmd := exec.Command("wireguard.exe", "/installtunnelservice", path+"/"+destFileName)
@@ -51,7 +42,7 @@ func main() {
 		fmt.Printf("Failed to run WireGuard command: %v\n", err)
 		return
 	}
-	fmt.Println("Press any key to continue...")
+	fmt.Println("Press any key to stop...")
 
 	// Wait for user input
 	var input string
@@ -66,7 +57,10 @@ func main() {
 		fmt.Printf("Failed to run WireGuard command: %v\n", err)
 		return
 	}
-	fmt.Println("WireGuard service uninstalled")
+	fmt.Println("WireGuard service uninstalled, press any key to quit")
+
+	os.Remove("wg2.conf")
+	fmt.Scanln(&input)
 }
 
 func downloadINIFile(url, destFileName string) error {
